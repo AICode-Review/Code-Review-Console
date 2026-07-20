@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+/*
+ * Console was authored dark-first (bg-zinc-950, text-zinc-50, border-zinc-800).
+ * Light theme inverts zinc / status scales so existing utilities repaint.
+ */
+.console-shell {
+  height: 100%;
+  background-color: var(--console-bg);
+  color: var(--console-fg);
+}
+
+.console-shell[data-theme="dark"] {
+  color-scheme: dark;
+  --console-bg: #09090b;
+  --console-fg: #fafafa;
+  --console-sidebar: #09090b;
+  --console-tooltip-bg: #18181b;
+  --console-tooltip-border: #3f3f46;
+  --console-tooltip-fg: #fafafa;
+  --console-chart-grid: #27272a;
+  --console-chart-tick: #71717a;
+  --console-chart-stroke: #09090b;
+}
+
+.console-shell[data-theme="light"] {
+  color-scheme: light;
+  --console-bg: #f4f4f5;
+  --console-fg: #18181b;
+  --console-sidebar: #ffffff;
+  --console-tooltip-bg: #ffffff;
+  --console-tooltip-border: #d4d4d8;
+  --console-tooltip-fg: #18181b;
+  --console-chart-grid: #e4e4e7;
+  --console-chart-tick: #71717a;
+  --console-chart-stroke: #ffffff;
+
+  --color-zinc-50: #18181b;
+  --color-zinc-100: #27272a;
+  --color-zinc-200: #3f3f46;
+  --color-zinc-300: #52525b;
+  --color-zinc-400: #71717a;
+  --color-zinc-500: #71717a;
+  --color-zinc-600: #a1a1aa;
+  --color-zinc-700: #d4d4d8;
+  --color-zinc-800: #e4e4e7;
+  --color-zinc-900: #f4f4f5;
+  --color-zinc-950: #ffffff;
+
+  --color-emerald-400: #047857;
+  --color-emerald-800: #a7f3d0;
+  --color-emerald-950: #ecfdf5;
+
+  --color-amber-400: #b45309;
+  --color-amber-800: #fde68a;
+  --color-amber-950: #fffbeb;
+
+  --color-red-400: #b91c1c;
+  --color-red-800: #fecaca;
+  --color-red-950: #fef2f2;
+}
+
+/* Tabular numbers for metrics; keep UI sans-serif. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
