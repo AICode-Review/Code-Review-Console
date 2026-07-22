@@ -7,6 +7,8 @@ type NavItem = {
   to: string;
   label: string;
   end?: boolean;
+  /** When set, overrides NavLink's default prefix matching (needed so /runs ≠ /runs/analytics). */
+  match?: (pathname: string) => boolean;
   icon: (props: { className?: string }) => ReactNode;
 };
 
@@ -131,8 +133,15 @@ const NAV: NavItem[] = [
   { to: "/orgs", label: "Organizations", icon: IconOrgs },
   { to: "/users", label: "Users", icon: IconUsers },
   { to: "/billing", label: "Billing", icon: IconBilling },
-  { to: "/runs", label: "Review runs", icon: IconRuns },
-  { to: "/runs/analytics", label: "Runs analytics", icon: IconRuns },
+  {
+    to: "/runs",
+    label: "Review runs",
+    end: true,
+    // Visual active on list + run detail; end avoids /runs matching /runs/analytics.
+    match: (p) => p === "/runs" || (p.startsWith("/runs/") && p !== "/runs/analytics"),
+    icon: IconRuns,
+  },
+  { to: "/runs/analytics", label: "Runs analytics", end: true, icon: IconRuns },
   { to: "/audit", label: "Audit log", icon: IconAudit },
 ];
 
@@ -147,6 +156,8 @@ function useHeaderMeta(): { title: string; crumb?: string } {
   if (path === "/users") return { title: "Users", crumb: "Platform" };
   if (path === "/billing") return { title: "Billing", crumb: "Platform" };
   if (path === "/runs") return { title: "Review runs", crumb: "Activity" };
+  if (path === "/runs/analytics") return { title: "Runs analytics", crumb: "Activity" };
+  if (path.startsWith("/runs/") && id) return { title: "Run detail", crumb: "Review runs" };
   if (path === "/audit") return { title: "Audit log", crumb: "Activity" };
   return { title: "Admin", crumb: "Platform" };
 }
@@ -155,6 +166,7 @@ export function Layout() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme, sidebarCollapsed, toggleSidebar } = useTheme();
   const { title, crumb } = useHeaderMeta();
+  const location = useLocation();
   const initials = (user?.email ?? "A").slice(0, 1).toUpperCase();
 
   return (
@@ -192,15 +204,16 @@ export function Layout() {
                 to={item.to}
                 end={item.end}
                 title={item.label}
-                className={({ isActive }) =>
-                  `group flex items-center rounded-lg text-sm font-medium transition ${
+                className={({ isActive }) => {
+                  const active = item.match ? item.match(location.pathname) : isActive;
+                  return `group flex items-center rounded-lg text-sm font-medium transition ${
                     sidebarCollapsed ? "justify-center p-2.5" : "gap-3 px-2.5 py-2"
                   } ${
-                    isActive
+                    active
                       ? "bg-zinc-800 text-zinc-50"
                       : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
-                  }`
-                }
+                  }`;
+                }}
               >
                 <Icon className="size-[18px] shrink-0 opacity-90" />
                 {!sidebarCollapsed && <span className="truncate">{item.label}</span>}

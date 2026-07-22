@@ -61,7 +61,7 @@ export default function Runs() {
     <PageShell>
       <PageHeader
         title="Review runs"
-        subtitle="Cross-org pipeline activity"
+        subtitle="Cross-org pipeline activity · open a run for funnel, cost split, latency, and errors"
         actions={
           <Link
             to="/runs/analytics"

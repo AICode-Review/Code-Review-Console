@@ -66,4 +66,20 @@ describe("Layout", () => {
     await user.click(screen.getByRole("button", { name: "Switch to dark theme" }));
     expect(shell).toHaveAttribute("data-theme", "dark");
   });
+
+  it("activates only Runs analytics when on /runs/analytics (not Review runs)", () => {
+    renderLayout("/runs/analytics");
+    const analytics = screen.getByRole("link", { name: /Runs analytics/i });
+    const reviewRuns = screen.getByRole("link", { name: /Review runs/i });
+    expect(analytics.className).toContain("bg-zinc-800");
+    expect(reviewRuns.className).not.toContain("bg-zinc-800");
+  });
+
+  it("keeps Review runs active on a run detail path", () => {
+    renderLayout("/runs/run-1");
+    const reviewRuns = screen.getByRole("link", { name: /Review runs/i });
+    const analytics = screen.getByRole("link", { name: /Runs analytics/i });
+    expect(reviewRuns.className).toContain("bg-zinc-800");
+    expect(analytics.className).not.toContain("bg-zinc-800");
+  });
 });

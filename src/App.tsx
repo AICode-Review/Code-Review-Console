@@ -15,6 +15,7 @@ const OrgDetail = lazy(() => import("./pages/OrgDetail"));
 const Users = lazy(() => import("./pages/Users"));
 const Billing = lazy(() => import("./pages/Billing"));
 const Runs = lazy(() => import("./pages/Runs"));
+const RunDetail = lazy(() => import("./pages/RunDetail"));
 const RunsAnalytics = lazy(() => import("./pages/RunsAnalytics"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 
@@ -62,6 +63,7 @@ export default function App() {
                   <Route path="/billing" element={<Billing />} />
                   <Route path="/runs" element={<Runs />} />
                   <Route path="/runs/analytics" element={<RunsAnalytics />} />
+                  <Route path="/runs/:id" element={<RunDetail />} />
                   <Route path="/audit" element={<AuditLog />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
