@@ -28,7 +28,7 @@ const queryClient = new QueryClient({
 /** Signs in via the same Supabase session as the app, then gates on GET /api/admin/overview — a 403 there (not a route guard) is the real enforcement. */
 function ProtectedShell() {
   const { authenticated, loading: authLoading } = useAuth();
-  const overview = useOverview();
+  const overview = useOverview(!authLoading && authenticated);
 
   if (authLoading) return <RouteFallback />;
   if (!authenticated) return <Navigate to="/signin" replace />;
