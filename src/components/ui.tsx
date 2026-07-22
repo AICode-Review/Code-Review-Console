@@ -19,7 +19,7 @@ export function EmptyState({ children }: { children: ReactNode }) {
 
 /** Fills the main pane; header/toolbar stay put, table panel grows and scrolls inside. */
 export function PageShell({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`flex h-full min-h-0 flex-col gap-4 ${className}`}>{children}</div>;
+  return <div className={`flex h-full min-h-0 flex-col gap-3 ${className}`}>{children}</div>;
 }
 
 /** Scrollable content pages (Overview, Org detail) — page scrolls, not the window. */
@@ -66,7 +66,7 @@ export function DataPanel({
 }) {
   return (
     <Card className={`flex min-h-0 flex-1 flex-col overflow-hidden ${className}`}>
-      {toolbar && <div className="shrink-0 border-b border-zinc-800 px-3 py-3">{toolbar}</div>}
+      {toolbar && <div className="shrink-0 border-b border-zinc-800 px-3 py-2">{toolbar}</div>}
       <div className="min-h-0 flex-1 overflow-auto">{children}</div>
       {footer && <div className="shrink-0 border-t border-zinc-800 bg-zinc-950/80">{footer}</div>}
     </Card>
@@ -82,7 +82,7 @@ export function Th({ children, align = "left" }: { children: ReactNode; align?: 
   return (
     <th
       scope="col"
-      className={`sticky top-0 z-10 border-b border-zinc-800 bg-zinc-900 px-3 py-2.5 text-left text-xs font-medium text-zinc-500 ${align === "right" ? "text-right" : "text-left"}`}
+      className={`sticky top-0 z-10 border-b border-zinc-800 bg-zinc-900 px-3 py-1.5 text-left text-xs font-medium text-zinc-500 ${align === "right" ? "text-right" : "text-left"}`}
     >
       {children}
     </th>
@@ -103,7 +103,7 @@ export function Td({
   return (
     <td
       title={title}
-      className={`border-b border-zinc-900 px-3 py-2 text-zinc-200 ${align === "right" ? "text-right" : "text-left"} ${className}`}
+      className={`border-b border-zinc-900 px-3 py-1.5 text-zinc-200 ${align === "right" ? "text-right" : "text-left"} ${className}`}
     >
       {children}
     </td>
