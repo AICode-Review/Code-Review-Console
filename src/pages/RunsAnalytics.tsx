@@ -5,7 +5,7 @@ import type { AdminRunSummary } from "../lib/types";
 import { ChartCard, DonutChart, DualProviderSpendChart, VerticalBarChart } from "../components/charts";
 import { api } from "../lib/api";
 import { STATUS_COLORS, bucketProviderSpendByDay, countBy, withColors } from "../lib/analytics";
-import { ErrorText, LoadingText, PageHeader, PageShell, StatCard, fmtInr } from "../components/ui";
+import { ErrorText, LoadingText, PageHeader, ScrollPage, StatCard, fmtInr } from "../components/ui";
 
 export default function RunsAnalytics() {
   const sampleQ = useQuery({
@@ -47,44 +47,46 @@ export default function RunsAnalytics() {
   if (sampleQ.error) return <ErrorText>Failed to load analytics: {(sampleQ.error as Error).message}</ErrorText>;
 
   return (
-    <PageShell>
-      <PageHeader
-        title="Runs analytics"
-        subtitle="LLM spend and finding funnel over the last 100 runs sample-wide"
-        actions={
-          <Link
-            to="/runs"
-            className="rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+    <ScrollPage>
+      <div className="flex flex-col gap-4 pb-8">
+        <PageHeader
+          title="Runs analytics"
+          subtitle="LLM spend and finding funnel over the last 100 runs sample-wide"
+          actions={
+            <Link
+              to="/runs"
+              className="rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+            >
+              ← Back to run list
+            </Link>
+          }
+        />
+
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+          <StatCard label="Spend (sample)" value={fmtInr(sampleStats.spend)} sub="last 100 · INR" />
+          <StatCard label="Anthropic (sample)" value={fmtInr(sampleStats.anthropic)} />
+          <StatCard label="OpenAI (sample)" value={fmtInr(sampleStats.openai)} />
+          <StatCard label="Completed" value={String(sampleStats.completed)} />
+          <StatCard label="Failed" value={String(sampleStats.failed)} />
+          <StatCard label="Posted (sample)" value={String(sampleStats.posted)} />
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-3">
+          <ChartCard title="Status (last 100)" className="!p-3" empty={charts.status.length === 0}>
+            <DonutChart data={charts.status} height={160} />
+          </ChartCard>
+          <ChartCard
+            title="Provider spend (14d sample)"
+            className="!p-3"
+            empty={charts.providerSpendByDay.every((d) => d.anthropic === 0 && d.openai === 0)}
           >
-            View run list →
-          </Link>
-        }
-      />
-
-      <div className="grid shrink-0 grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Spend (sample)" value={fmtInr(sampleStats.spend)} sub="last 100 · INR" />
-        <StatCard label="Anthropic (sample)" value={fmtInr(sampleStats.anthropic)} />
-        <StatCard label="OpenAI (sample)" value={fmtInr(sampleStats.openai)} />
-        <StatCard label="Completed" value={String(sampleStats.completed)} />
-        <StatCard label="Failed" value={String(sampleStats.failed)} />
-        <StatCard label="Posted (sample)" value={String(sampleStats.posted)} />
+            <DualProviderSpendChart data={charts.providerSpendByDay} height={160} formatValue={(n) => fmtInr(n)} />
+          </ChartCard>
+          <ChartCard title="Finding funnel (sample)" className="!p-3" empty={sample.length === 0}>
+            <VerticalBarChart data={charts.funnel} dataKey="value" height={160} />
+          </ChartCard>
+        </div>
       </div>
-
-      <div className="grid shrink-0 gap-3 lg:grid-cols-3">
-        <ChartCard title="Status (last 100)" className="!p-3" empty={charts.status.length === 0}>
-          <DonutChart data={charts.status} height={160} />
-        </ChartCard>
-        <ChartCard
-          title="Provider spend (14d sample)"
-          className="!p-3"
-          empty={charts.providerSpendByDay.every((d) => d.anthropic === 0 && d.openai === 0)}
-        >
-          <DualProviderSpendChart data={charts.providerSpendByDay} height={160} formatValue={(n) => fmtInr(n)} />
-        </ChartCard>
-        <ChartCard title="Finding funnel (sample)" className="!p-3" empty={sample.length === 0}>
-          <VerticalBarChart data={charts.funnel} dataKey="value" height={160} />
-        </ChartCard>
-      </div>
-    </PageShell>
+    </ScrollPage>
   );
 }

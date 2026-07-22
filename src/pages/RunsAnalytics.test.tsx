@@ -52,7 +52,7 @@ describe("RunsAnalytics page", () => {
     expect(await screen.findByText("Runs analytics")).toBeInTheDocument();
     expect(screen.getAllByText("₹34.86").length).toBeGreaterThanOrEqual(1);
     expect(apiMock).toHaveBeenCalledWith("/api/admin/runs?limit=100");
-    expect(screen.getByRole("link", { name: "View run list →" })).toHaveAttribute("href", "/runs");
+    expect(screen.getByRole("link", { name: "← Back to run list" })).toHaveAttribute("href", "/runs");
   });
 
   it("shows an error message when the sample request fails", async () => {

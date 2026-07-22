@@ -1,11 +1,9 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ChartCard, DonutChart } from "../components/charts";
 import { api } from "../lib/api";
 import type { AdminOrgSummary } from "../lib/types";
 import { useClientPagination } from "../hooks/useClientPagination";
-import { PLATFORM_COLORS, PLAN_COLORS, STATUS_COLORS, countBy, withColors } from "../lib/analytics";
 import {
   Badge,
   DataPanel,
@@ -56,15 +54,6 @@ export default function Orgs() {
 
   const paging = useClientPagination(filtered);
 
-  const charts = useMemo(
-    () => ({
-      plan: withColors(countBy(filtered, (o) => o.plan), PLAN_COLORS),
-      platform: withColors(countBy(filtered, (o) => o.platform), PLATFORM_COLORS),
-      sub: withColors(countBy(filtered, (o) => o.subscriptionStatus ?? "none"), STATUS_COLORS),
-    }),
-    [filtered],
-  );
-
   const onQuery = (v: string) => {
     setQuery(v);
     paging.resetPage();
@@ -80,18 +69,6 @@ export default function Orgs() {
   return (
     <PageShell>
       <PageHeader title="Orgs" subtitle={`${filtered.length} of ${data?.orgs.length ?? 0} organizations`} />
-
-      <div className="grid shrink-0 gap-3 md:grid-cols-3">
-        <ChartCard title="Plan mix" className="!p-3" empty={charts.plan.length === 0}>
-          <DonutChart data={charts.plan} height={120} />
-        </ChartCard>
-        <ChartCard title="Platform" className="!p-3" empty={charts.platform.length === 0}>
-          <DonutChart data={charts.platform} height={120} />
-        </ChartCard>
-        <ChartCard title="Subscription status" className="!p-3" empty={charts.sub.length === 0}>
-          <DonutChart data={charts.sub} height={120} />
-        </ChartCard>
-      </div>
 
       <DataPanel
         toolbar={

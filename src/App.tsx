@@ -14,10 +14,12 @@ const Orgs = lazy(() => import("./pages/Orgs"));
 const OrgDetail = lazy(() => import("./pages/OrgDetail"));
 const Users = lazy(() => import("./pages/Users"));
 const Billing = lazy(() => import("./pages/Billing"));
+const BillingAnalytics = lazy(() => import("./pages/BillingAnalytics"));
 const Runs = lazy(() => import("./pages/Runs"));
 const RunDetail = lazy(() => import("./pages/RunDetail"));
 const RunsAnalytics = lazy(() => import("./pages/RunsAnalytics"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
+const AuditAnalytics = lazy(() => import("./pages/AuditAnalytics"));
 
 function RouteFallback() {
   return <div className="flex min-h-screen items-center justify-center text-sm text-zinc-500">Loading…</div>;
@@ -61,10 +63,12 @@ export default function App() {
                   <Route path="/orgs/:id" element={<OrgDetail />} />
                   <Route path="/users" element={<Users />} />
                   <Route path="/billing" element={<Billing />} />
+                  <Route path="/billing/analytics" element={<BillingAnalytics />} />
                   <Route path="/runs" element={<Runs />} />
                   <Route path="/runs/analytics" element={<RunsAnalytics />} />
                   <Route path="/runs/:id" element={<RunDetail />} />
                   <Route path="/audit" element={<AuditLog />} />
+                  <Route path="/audit/analytics" element={<AuditAnalytics />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

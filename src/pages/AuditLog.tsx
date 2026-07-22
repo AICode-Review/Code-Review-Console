@@ -1,11 +1,8 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import type { AdminAuditLogEntry } from "../lib/types";
 import { useCursorPagination } from "../hooks/useCursorPagination";
-import { ChartCard, DonutChart, TimeSeriesChart } from "../components/charts";
-import { api } from "../lib/api";
-import { actionCategory, bucketByDay, countBy, withColors } from "../lib/analytics";
+import { actionCategory } from "../lib/analytics";
 import {
   Badge,
   CursorPagination,
@@ -93,16 +90,9 @@ export default function AuditLog() {
     initialPageSize: 25,
   });
 
-  const sampleQ = useQuery({
-    queryKey: ["admin", "audit", "chart-sample"],
-    queryFn: () => api<{ entries: AdminAuditLogEntry[] }>("/api/admin/audit?limit=100"),
-  });
-
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [actorFilter, setActorFilter] = useState("all");
-
-  const sample = sampleQ.data?.entries ?? [];
 
   const filteredPage = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -117,12 +107,6 @@ export default function AuditLog() {
     });
   }, [items, query, categoryFilter, actorFilter]);
 
-  const charts = useMemo(() => {
-    const categories = withColors(countBy(sample, (e) => actionCategory(e.action)));
-    const byDay = bucketByDay(sample, (e) => e.createdAt, () => 1, 14);
-    return { categories, byDay };
-  }, [sample]);
-
   if (isLoading) return <LoadingText>Loading audit log…</LoadingText>;
   if (error) return <ErrorText>Failed to load audit log: {(error as Error).message}</ErrorText>;
 
@@ -131,16 +115,15 @@ export default function AuditLog() {
       <PageHeader
         title="Audit log"
         subtitle="Cross-org operator trail — billing, members, rules, reviews blocked by plan/quota"
+        actions={
+          <Link
+            to="/audit/analytics"
+            className="rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+          >
+            View analytics →
+          </Link>
+        }
       />
-
-      <div className="grid shrink-0 gap-3 lg:grid-cols-2">
-        <ChartCard title="Action categories (last 100)" className="!p-3" empty={charts.categories.length === 0}>
-          <DonutChart data={charts.categories} height={140} />
-        </ChartCard>
-        <ChartCard title="Events / day (14d sample)" className="!p-3" empty={charts.byDay.every((d) => d.value === 0)}>
-          <TimeSeriesChart data={charts.byDay} height={140} color="#fbbf24" />
-        </ChartCard>
-      </div>
 
       <DataPanel
         toolbar={

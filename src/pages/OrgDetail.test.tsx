@@ -59,7 +59,7 @@ describe("OrgDetail page", () => {
     apiMock.mockReset();
   });
 
-  it("renders org name, plan, members, and repos once loaded", async () => {
+  it("renders org name, plan, and summary metrics on the default Summary tab", async () => {
     apiMock.mockImplementation(async (path: string) => {
       if (path === "/api/admin/orgs/org-1") return baseOrg();
       throw new Error(`unexpected ${path}`);
@@ -67,10 +67,42 @@ describe("OrgDetail page", () => {
     renderOrgDetail();
 
     expect(await screen.findByRole("heading", { name: "Acme Inc" })).toBeInTheDocument();
-    expect(screen.getByText("pro")).toBeInTheDocument();
-    expect(screen.getByText("owner@acme.dev")).toBeInTheDocument();
-    expect(screen.getByText("acme/web")).toBeInTheDocument();
+    // "pro" appears in both the header badge and the Summary tab's Plan field.
+    expect(screen.getAllByText("pro").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("5 seats")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Suspend" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Members (1)" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Repos (1)" })).toBeInTheDocument();
+  });
+
+  it("shows the members list on the Members tab", async () => {
+    const user = userEvent.setup();
+    apiMock.mockImplementation(async (path: string) => {
+      if (path === "/api/admin/orgs/org-1") return baseOrg();
+      throw new Error(`unexpected ${path}`);
+    });
+    renderOrgDetail();
+
+    await screen.findByRole("heading", { name: "Acme Inc" });
+    await user.click(screen.getByRole("tab", { name: "Members (1)" }));
+
+    expect(await screen.findByText("owner@acme.dev")).toBeInTheDocument();
+    expect(screen.getByText("owner")).toBeInTheDocument();
+  });
+
+  it("shows the repos list on the Repos tab", async () => {
+    const user = userEvent.setup();
+    apiMock.mockImplementation(async (path: string) => {
+      if (path === "/api/admin/orgs/org-1") return baseOrg();
+      throw new Error(`unexpected ${path}`);
+    });
+    renderOrgDetail();
+
+    await screen.findByRole("heading", { name: "Acme Inc" });
+    await user.click(screen.getByRole("tab", { name: "Repos (1)" }));
+
+    expect(await screen.findByText("acme/web")).toBeInTheDocument();
+    expect(screen.getByText("ready")).toBeInTheDocument();
   });
 
   it("suspends an org with a reason and refreshes the data", async () => {

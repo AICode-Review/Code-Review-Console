@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
@@ -15,10 +15,9 @@ import {
   ErrorText,
   LoadingText,
   PageHeader,
+  PageShell,
   Pagination,
-  ScrollPage,
   SearchInput,
-  StatCard,
   Table,
   Td,
   Th,
@@ -30,6 +29,33 @@ import {
 } from "../components/ui";
 
 type DialogKind = "suspend" | "unsuspend" | "cancel" | "change-pro" | "change-team" | null;
+type Tab = "summary" | "members" | "repos" | "runs";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "summary", label: "Summary" },
+  { id: "members", label: "Members" },
+  { id: "repos", label: "Repos" },
+  { id: "runs", label: "Recent runs" },
+];
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium text-zinc-500">{label}</dt>
+      <dd className="mt-1 text-sm text-zinc-200">{children}</dd>
+    </div>
+  );
+}
+
+function Metric({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-md border border-zinc-800 bg-zinc-950/50 px-3 py-2.5">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-50">{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-zinc-500">{sub}</p>}
+    </div>
+  );
+}
 
 export default function OrgDetail() {
   const { id } = useParams<{ id: string }>();
@@ -40,6 +66,7 @@ export default function OrgDetail() {
     enabled: !!id,
   });
 
+  const [tab, setTab] = useState<Tab>("summary");
   const [memberQuery, setMemberQuery] = useState("");
   const [repoQuery, setRepoQuery] = useState("");
   const [dialog, setDialog] = useState<DialogKind>(null);
@@ -62,8 +89,8 @@ export default function OrgDetail() {
     });
   }, [data?.repos, repoQuery]);
 
-  const memberPaging = useClientPagination(members, 10);
-  const repoPaging = useClientPagination(repos, 10);
+  const memberPaging = useClientPagination(members, 25);
+  const repoPaging = useClientPagination(repos, 25);
 
   const runSpend = useMemo(
     () => (data?.recentRuns ?? []).reduce((n, r) => n + r.llmCostUsd, 0),
@@ -165,9 +192,16 @@ export default function OrgDetail() {
     },
   };
 
+  const tabLabel = (t: Tab) => {
+    if (t === "members") return `Members (${data.members.length})`;
+    if (t === "repos") return `Repos (${data.repos.length})`;
+    if (t === "runs") return `Recent runs (${data.recentRuns.length})`;
+    return "Summary";
+  };
+
   return (
-    <ScrollPage>
-      <div className="flex flex-col gap-6 pb-6">
+    <PageShell>
+      <div className="shrink-0 space-y-3">
         <div>
           <Link to="/orgs" className="text-xs text-zinc-500 hover:text-zinc-300">
             ← Orgs
@@ -215,113 +249,164 @@ export default function OrgDetail() {
           )}
         </div>
 
-        <Card className="p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium text-zinc-500">Billing</p>
-              <p className="mt-1 text-sm text-zinc-300">
-                {hasLiveSub
-                  ? `Active ${data.plan} subscription — cancel at cycle end or change plan via Razorpay.`
-                  : "No live paid subscription on file (checkout is customer-owned)."}
-              </p>
-            </div>
-            {hasLiveSub && (
-              <Toolbar>
-                <ActionButton
-                  onClick={() => {
-                    setActionError(null);
-                    setDialog("change-pro");
-                  }}
-                  disabled={data.plan === "pro"}
-                >
-                  → Pro
-                </ActionButton>
-                <ActionButton
-                  onClick={() => {
-                    setActionError(null);
-                    setDialog("change-team");
-                  }}
-                  disabled={data.plan === "team"}
-                >
-                  → Team
-                </ActionButton>
-                <ActionButton
-                  tone="danger"
-                  onClick={() => {
-                    setActionError(null);
-                    setDialog("cancel");
-                  }}
-                >
-                  Cancel sub
-                </ActionButton>
-              </Toolbar>
-            )}
-          </div>
-        </Card>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <StatCard
-            label="Usage this month"
-            value={
-              data.usage.quota === null
-                ? String(data.usage.used)
-                : `${data.usage.used} / ${data.usage.quota}`
-            }
-            sub={
-              isSuspended
-                ? "org suspended — reviews blocked"
-                : data.usage.blocked
-                  ? "quota exceeded — reviews blocked"
-                  : data.usage.remaining !== null
-                    ? `${data.usage.remaining} remaining`
-                    : "unlimited (self-hosted)"
-            }
-          />
-          <StatCard label="Members" value={String(data.members.length)} />
-          <StatCard label="Repos" value={String(data.repos.length)} />
-          <StatCard
-            label="Recent run spend"
-            value={fmtInr(runSpend)}
-            sub={`last ${data.recentRuns.length} runs · INR`}
-          />
-          <StatCard label="Anthropic (recent)" value={fmtInr(runAnthropic)} />
-          <StatCard label="OpenAI (recent)" value={fmtInr(runOpenai)} />
+        <div className="flex flex-wrap gap-1 border-b border-zinc-800 pb-px" role="tablist" aria-label="Organization sections">
+          {TABS.map((t) => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(t.id)}
+                className={`rounded-t-md px-3 py-2 text-sm font-medium transition ${
+                  active
+                    ? "border border-b-0 border-zinc-700 bg-zinc-900 text-zinc-50"
+                    : "text-zinc-500 hover:text-zinc-200"
+                }`}
+              >
+                {tabLabel(t.id)}
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-        {usagePct !== null && (
+      {tab === "summary" && (
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card className="p-4">
+              <h2 className="text-sm font-semibold text-zinc-100">Organization</h2>
+              <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                <Field label="Kind">{data.kind}</Field>
+                <Field label="Platform">{data.platform}</Field>
+                <Field label="Plan">
+                  <Badge tone={planTone(data.plan)}>{data.plan}</Badge>
+                </Field>
+                <Field label="Seats">{data.seats}</Field>
+                <Field label="Created">{fmtDate(data.createdAt)}</Field>
+                <Field label="Org ID">
+                  <span className="break-all font-mono text-xs text-zinc-400">{data.id}</span>
+                </Field>
+              </dl>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-zinc-100">Billing</h2>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    {hasLiveSub
+                      ? `Live ${data.plan} subscription — cancel at cycle end or change plan via Razorpay.`
+                      : "No live paid subscription on file (checkout is customer-owned)."}
+                  </p>
+                  {data.subscriptionStatus && (
+                    <p className="mt-2 text-sm text-zinc-300">
+                      Status: <Badge tone={statusTone(data.subscriptionStatus)}>{data.subscriptionStatus}</Badge>
+                    </p>
+                  )}
+                </div>
+                {hasLiveSub && (
+                  <Toolbar>
+                    <ActionButton
+                      onClick={() => {
+                        setActionError(null);
+                        setDialog("change-pro");
+                      }}
+                      disabled={data.plan === "pro"}
+                    >
+                      → Pro
+                    </ActionButton>
+                    <ActionButton
+                      onClick={() => {
+                        setActionError(null);
+                        setDialog("change-team");
+                      }}
+                      disabled={data.plan === "team"}
+                    >
+                      → Team
+                    </ActionButton>
+                    <ActionButton
+                      tone="danger"
+                      onClick={() => {
+                        setActionError(null);
+                        setDialog("cancel");
+                      }}
+                    >
+                      Cancel sub
+                    </ActionButton>
+                  </Toolbar>
+                )}
+              </div>
+            </Card>
+          </div>
+
           <Card className="p-4">
-            <div className="flex items-center justify-between text-xs text-zinc-500">
-              <span>Quota burn</span>
-              <span className="tabular-nums">{usagePct}%</span>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded bg-zinc-800">
-              <div
-                className={`h-full rounded ${data.usage.blocked ? "bg-red-500" : usagePct >= 80 ? "bg-amber-500" : "bg-emerald-500"}`}
-                style={{ width: `${usagePct}%` }}
+            <h2 className="text-sm font-semibold text-zinc-100">Usage this month</h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Metric
+                label="Reviews used"
+                value={
+                  data.usage.quota === null ? String(data.usage.used) : `${data.usage.used} / ${data.usage.quota}`
+                }
+                sub={
+                  isSuspended
+                    ? "org suspended — reviews blocked"
+                    : data.usage.blocked
+                      ? "quota exceeded — reviews blocked"
+                      : data.usage.remaining !== null
+                        ? `${data.usage.remaining} remaining`
+                        : "unlimited (self-hosted)"
+                }
               />
+              <Metric label="Members" value={String(data.members.length)} />
+              <Metric label="Repos" value={String(data.repos.length)} />
+              <Metric label="Recent runs" value={String(data.recentRuns.length)} />
             </div>
-            <p className="mt-2 text-xs text-zinc-600">
-              Period {fmtDate(data.usage.periodStart)} → {fmtDate(data.usage.periodEnd)}
-            </p>
+            {usagePct !== null && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-xs text-zinc-500">
+                  <span>Quota burn</span>
+                  <span className="tabular-nums">{usagePct}%</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded bg-zinc-800">
+                  <div
+                    className={`h-full rounded ${data.usage.blocked ? "bg-red-500" : usagePct >= 80 ? "bg-amber-500" : "bg-emerald-500"}`}
+                    style={{ width: `${usagePct}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-zinc-600">
+                  Period {fmtDate(data.usage.periodStart)} → {fmtDate(data.usage.periodEnd)}
+                </p>
+              </div>
+            )}
           </Card>
-        )}
 
-        <DataPanel
-          className="h-72 flex-none"
-          toolbar={
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs font-medium text-zinc-500">Members ({members.length})</p>
-              <Toolbar>
-                <SearchInput
-                  value={memberQuery}
-                  onChange={(v) => {
-                    setMemberQuery(v);
-                    memberPaging.resetPage();
-                  }}
-                  placeholder="Filter members…"
-                />
-              </Toolbar>
+          <Card className="p-4">
+            <h2 className="text-sm font-semibold text-zinc-100">Recent run spend</h2>
+            <p className="mt-1 text-xs text-zinc-500">Last {data.recentRuns.length} runs · INR</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <Metric label="Total" value={fmtInr(runSpend)} />
+              <Metric label="Anthropic" value={fmtInr(runAnthropic)} />
+              <Metric label="OpenAI" value={fmtInr(runOpenai)} />
             </div>
+          </Card>
+        </div>
+      )}
+
+      {tab === "members" && (
+        <DataPanel
+          toolbar={
+            <Toolbar>
+              <SearchInput
+                value={memberQuery}
+                onChange={(v) => {
+                  setMemberQuery(v);
+                  memberPaging.resetPage();
+                }}
+                placeholder="Filter members…"
+              />
+            </Toolbar>
           }
           footer={
             <Pagination
@@ -360,23 +445,21 @@ export default function OrgDetail() {
             </Table>
           )}
         </DataPanel>
+      )}
 
+      {tab === "repos" && (
         <DataPanel
-          className="h-72 flex-none"
           toolbar={
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs font-medium text-zinc-500">Repos ({repos.length})</p>
-              <Toolbar>
-                <SearchInput
-                  value={repoQuery}
-                  onChange={(v) => {
-                    setRepoQuery(v);
-                    repoPaging.resetPage();
-                  }}
-                  placeholder="Filter repos…"
-                />
-              </Toolbar>
-            </div>
+            <Toolbar>
+              <SearchInput
+                value={repoQuery}
+                onChange={(v) => {
+                  setRepoQuery(v);
+                  repoPaging.resetPage();
+                }}
+                placeholder="Filter repos…"
+              />
+            </Toolbar>
           }
           footer={
             <Pagination
@@ -412,19 +495,13 @@ export default function OrgDetail() {
             </Table>
           )}
         </DataPanel>
+      )}
 
-        <DataPanel
-          className="h-80 flex-none"
-          toolbar={
-            <p className="text-xs font-medium text-zinc-500">
-              Recent runs (last {data.recentRuns.length})
-            </p>
-          }
-          footer={<RunLinkHint />}
-        >
+      {tab === "runs" && (
+        <DataPanel footer={<RunLinkHint />}>
           <RunsTable runs={data.recentRuns} showOrg={false} />
         </DataPanel>
-      </div>
+      )}
 
       {dialog && (
         <ConfirmDialog
@@ -456,6 +533,6 @@ export default function OrgDetail() {
           )}
         </ConfirmDialog>
       )}
-    </ScrollPage>
+    </PageShell>
   );
 }

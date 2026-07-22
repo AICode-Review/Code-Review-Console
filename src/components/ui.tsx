@@ -22,9 +22,13 @@ export function PageShell({ children, className = "" }: { children: ReactNode; c
   return <div className={`flex h-full min-h-0 flex-col gap-3 ${className}`}>{children}</div>;
 }
 
-/** Scrollable content pages (Overview, Org detail) — page scrolls, not the window. */
+/** Scrollable content pages (Overview, Org detail) — page scrolls, not the window.
+ * Horizontal padding is applied inside the scrollport (via -mx + px) so the right
+ * gap matches the left; otherwise the scrollbar sits in main's padding and content
+ * looks flush against the edge.
+ */
 export function ScrollPage({ children }: { children: ReactNode }) {
-  return <div className="h-full min-h-0 overflow-y-auto">{children}</div>;
+  return <div className="-mx-6 -mb-6 h-full min-h-0 overflow-y-auto px-6 pb-6">{children}</div>;
 }
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {

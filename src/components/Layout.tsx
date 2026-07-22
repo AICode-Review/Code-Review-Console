@@ -132,17 +132,31 @@ const NAV: NavItem[] = [
   { to: "/", label: "Overview", end: true, icon: IconOverview },
   { to: "/orgs", label: "Organizations", icon: IconOrgs },
   { to: "/users", label: "Users", icon: IconUsers },
-  { to: "/billing", label: "Billing", icon: IconBilling },
+  {
+    to: "/billing",
+    label: "Billing",
+    end: true,
+    match: (p) => p === "/billing",
+    icon: IconBilling,
+  },
+  { to: "/billing/analytics", label: "Billing analytics", end: true, icon: IconBilling },
   {
     to: "/runs",
     label: "Review runs",
     end: true,
-    // Visual active on list + run detail; end avoids /runs matching /runs/analytics.
+    // Active on the list + run detail; end avoids /runs matching /runs/analytics.
     match: (p) => p === "/runs" || (p.startsWith("/runs/") && p !== "/runs/analytics"),
     icon: IconRuns,
   },
   { to: "/runs/analytics", label: "Runs analytics", end: true, icon: IconRuns },
-  { to: "/audit", label: "Audit log", icon: IconAudit },
+  {
+    to: "/audit",
+    label: "Audit log",
+    end: true,
+    match: (p) => p === "/audit",
+    icon: IconAudit,
+  },
+  { to: "/audit/analytics", label: "Audit analytics", end: true, icon: IconAudit },
 ];
 
 function useHeaderMeta(): { title: string; crumb?: string } {
@@ -155,10 +169,12 @@ function useHeaderMeta(): { title: string; crumb?: string } {
   if (path.startsWith("/orgs/") && id) return { title: "Organization detail", crumb: "Organizations" };
   if (path === "/users") return { title: "Users", crumb: "Platform" };
   if (path === "/billing") return { title: "Billing", crumb: "Platform" };
+  if (path === "/billing/analytics") return { title: "Billing analytics", crumb: "Platform" };
   if (path === "/runs") return { title: "Review runs", crumb: "Activity" };
   if (path === "/runs/analytics") return { title: "Runs analytics", crumb: "Activity" };
   if (path.startsWith("/runs/") && id) return { title: "Run detail", crumb: "Review runs" };
   if (path === "/audit") return { title: "Audit log", crumb: "Activity" };
+  if (path === "/audit/analytics") return { title: "Audit analytics", crumb: "Activity" };
   return { title: "Admin", crumb: "Platform" };
 }
 

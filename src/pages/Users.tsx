@@ -18,7 +18,6 @@ import {
   Pagination,
   SearchInput,
   SelectFilter,
-  StatCard,
   Table,
   Td,
   Th,
@@ -59,15 +58,6 @@ export default function Users() {
 
   const paging = useClientPagination(filtered);
 
-  const stats = useMemo(() => {
-    const activeSeats = filtered.filter((u) => u.seatActive).length;
-    const inactiveSeats = filtered.length - activeSeats;
-    const admins = filtered.filter((u) => u.isPlatformAdmin).length;
-    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    const signups30d = filtered.filter((u) => new Date(u.createdAt).getTime() >= cutoff).length;
-    return { activeSeats, inactiveSeats, admins, signups30d };
-  }, [filtered]);
-
   const toggleAdmin = useMutation({
     mutationFn: (args: { id: string; isPlatformAdmin: boolean }) =>
       api<{ id: string; isPlatformAdmin: boolean }>(`/api/admin/users/${args.id}`, {
@@ -97,25 +87,15 @@ export default function Users() {
   if (error) return <ErrorText>Failed to load users: {(error as Error).message}</ErrorText>;
 
   const adminCount = (data?.users ?? []).filter((u) => u.isPlatformAdmin).length;
+  const activeSeats = filtered.filter((u) => u.seatActive).length;
   const granting = pending ? !pending.isPlatformAdmin : false;
 
   return (
     <PageShell>
       <PageHeader
         title="Users"
-        subtitle={`${filtered.length} of ${data?.users.length ?? 0} users · ${adminCount} platform admin${adminCount === 1 ? "" : "s"}`}
+        subtitle={`${filtered.length} of ${data?.users.length ?? 0} users · ${activeSeats} active seats · ${adminCount} platform admin${adminCount === 1 ? "" : "s"}`}
       />
-
-      <div className="grid shrink-0 grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard
-          label="Active seats"
-          value={String(stats.activeSeats)}
-          sub={stats.inactiveSeats > 0 ? `${stats.inactiveSeats} inactive` : "after filters"}
-        />
-        <StatCard label="Platform admins" value={String(stats.admins)} sub="after filters" />
-        <StatCard label="Regular users" value={String(filtered.length - stats.admins)} sub="after filters" />
-        <StatCard label="Signups (30d)" value={String(stats.signups30d)} sub="after filters" />
-      </div>
 
       <DataPanel
         toolbar={

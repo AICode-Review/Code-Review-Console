@@ -82,4 +82,16 @@ describe("Layout", () => {
     expect(reviewRuns.className).toContain("bg-zinc-800");
     expect(analytics.className).not.toContain("bg-zinc-800");
   });
+
+  it("activates only Billing analytics when on /billing/analytics", () => {
+    renderLayout("/billing/analytics");
+    expect(screen.getByRole("link", { name: /^Billing analytics$/i }).className).toContain("bg-zinc-800");
+    expect(screen.getByRole("link", { name: /^Billing$/i }).className).not.toContain("bg-zinc-800");
+  });
+
+  it("activates only Audit analytics when on /audit/analytics", () => {
+    renderLayout("/audit/analytics");
+    expect(screen.getByRole("link", { name: /^Audit analytics$/i }).className).toContain("bg-zinc-800");
+    expect(screen.getByRole("link", { name: /^Audit log$/i }).className).not.toContain("bg-zinc-800");
+  });
 });

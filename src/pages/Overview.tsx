@@ -150,7 +150,7 @@ export default function Overview() {
 
   return (
     <ScrollPage>
-      <div className="flex flex-col gap-6 pb-6">
+      <div className="flex flex-col gap-6">
         <PageHeader
           title="Overview"
           subtitle={`Platform-wide tracking · billing period ${periodLabel}`}
