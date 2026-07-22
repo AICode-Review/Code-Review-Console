@@ -15,6 +15,7 @@ const OrgDetail = lazy(() => import("./pages/OrgDetail"));
 const Users = lazy(() => import("./pages/Users"));
 const Billing = lazy(() => import("./pages/Billing"));
 const Runs = lazy(() => import("./pages/Runs"));
+const RunsAnalytics = lazy(() => import("./pages/RunsAnalytics"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 
 function RouteFallback() {
@@ -60,6 +61,7 @@ export default function App() {
                   <Route path="/users" element={<Users />} />
                   <Route path="/billing" element={<Billing />} />
                   <Route path="/runs" element={<Runs />} />
+                  <Route path="/runs/analytics" element={<RunsAnalytics />} />
                   <Route path="/audit" element={<AuditLog />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />

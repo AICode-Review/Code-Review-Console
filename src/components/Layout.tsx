@@ -132,6 +132,7 @@ const NAV: NavItem[] = [
   { to: "/users", label: "Users", icon: IconUsers },
   { to: "/billing", label: "Billing", icon: IconBilling },
   { to: "/runs", label: "Review runs", icon: IconRuns },
+  { to: "/runs/analytics", label: "Runs analytics", icon: IconRuns },
   { to: "/audit", label: "Audit log", icon: IconAudit },
 ];
 

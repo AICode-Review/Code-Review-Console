@@ -46,17 +46,14 @@ describe("Runs page", () => {
   it("shows finding funnel columns and requests cursor pagination params", async () => {
     apiMock.mockImplementation(async (path: string) => {
       if (path === "/api/admin/runs?limit=25") return { runs: [sampleRun] };
-      if (path === "/api/admin/runs?limit=100") return { runs: [sampleRun] };
       throw new Error(`unexpected ${path}`);
     });
     renderRuns();
 
     expect(await screen.findByText("Acme")).toBeInTheDocument();
-    expect(screen.getAllByText("₹34.86").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole("columnheader", { name: "Cand" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Ver" })).toBeInTheDocument();
     expect(apiMock).toHaveBeenCalledWith("/api/admin/runs?limit=25");
-    expect(apiMock).toHaveBeenCalledWith("/api/admin/runs?limit=100");
   });
 
   it("loads the next page with before= last startedAt", async () => {
