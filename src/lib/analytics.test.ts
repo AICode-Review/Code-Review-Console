@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { actionCategory, bucketByDay, countBy, withColors } from "../lib/analytics";
+import { actionCategory, bucketByDay, countBy, priceForTier, withColors } from "../lib/analytics";
 
 describe("analytics helpers", () => {
   it("countBy aggregates and sorts descending", () => {
@@ -17,6 +17,13 @@ describe("analytics helpers", () => {
   it("actionCategory splits dotted actions", () => {
     expect(actionCategory("billing.cancel_requested")).toBe("billing");
     expect(actionCategory("onboarding")).toBe("onboarding");
+  });
+
+  it("priceForTier returns the documented per-seat price for pro/team, 0 for anything else", () => {
+    expect(priceForTier("pro")).toBe(15);
+    expect(priceForTier("team")).toBe(25);
+    expect(priceForTier("free")).toBe(0);
+    expect(priceForTier("unknown")).toBe(0);
   });
 
   it("bucketByDay fills empty days", () => {
