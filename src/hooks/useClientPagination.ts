@@ -10,7 +10,10 @@ export function useClientPagination<T>(items: T[], initialPageSize: PageSize = 2
 
   const total = items.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
-  const safePage = Math.min(page, totalPages);
+  // Clamp both bounds — setPage is exposed directly to callers, and an unclamped page < 1
+  // would make startIndex negative, which Array.prototype.slice silently reinterprets as
+  // counting from the array's END rather than erroring, returning the wrong (last) page.
+  const safePage = Math.max(1, Math.min(page, totalPages));
   const startIndex = (safePage - 1) * pageSize;
   const pageItems = items.slice(startIndex, startIndex + pageSize);
 
