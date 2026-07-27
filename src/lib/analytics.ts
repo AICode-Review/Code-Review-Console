@@ -1,5 +1,22 @@
 /** Small client-side aggregations for console charts (no backend changes). */
 
+/**
+ * Real, documented pricing (see backend/src/config.ts's quota-derivation comment, which
+ * derives PRO_MONTHLY_REVIEWS_PER_SEAT/TEAM_MONTHLY_REVIEWS_PER_SEAT from these exact
+ * numbers) — every "estimated MRR" calculation in this console must agree on this. A
+ * separate copy also exists in backend/src/db/adminRepositories.ts's TIER_PRICE_USD,
+ * which can't share code with this frontend package (no shared code across the
+ * frontend/backend/console boundary) — but Overview.tsx and BillingAnalytics.tsx, both in
+ * THIS package, previously each hand-duplicated their own copy independently, which is
+ * exactly the kind of drift risk that already caused a real, confirmed bug elsewhere this
+ * session (the backend/frontend analytics acceptancePct formula silently diverging).
+ */
+export const TIER_PRICE_USD: Record<string, number> = { pro: 15, team: 25 };
+
+export function priceForTier(tier: string): number {
+  return TIER_PRICE_USD[tier] ?? 0;
+}
+
 export type NamedCount = { name: string; count: number; fill?: string };
 
 export const CHART_COLORS = [

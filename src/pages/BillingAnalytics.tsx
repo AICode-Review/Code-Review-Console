@@ -5,10 +5,8 @@ import { ChartCard, DonutChart, VerticalBarChart } from "../components/charts";
 import { api } from "../lib/api";
 import type { AdminSubscriptionSummary } from "../lib/types";
 import { useOverview } from "../hooks/useOverview";
-import { PLAN_COLORS, STATUS_COLORS, countBy, sumBy, withColors } from "../lib/analytics";
+import { PLAN_COLORS, STATUS_COLORS, countBy, priceForTier, sumBy, withColors } from "../lib/analytics";
 import { ErrorText, LoadingText, PageHeader, ScrollPage, StatCard, fmtInr } from "../components/ui";
-
-const TIER_PRICE: Record<string, number> = { pro: 15, team: 25 };
 
 export default function BillingAnalytics() {
   const overview = useOverview();
@@ -32,7 +30,7 @@ export default function BillingAnalytics() {
     const mrr = sumBy(
       subs.filter((s) => s.status === "active" || s.status === "trialing"),
       (s) => s.tier,
-      (s) => (TIER_PRICE[s.tier] ?? 0) * Math.max(1, s.seats),
+      (s) => priceForTier(s.tier) * Math.max(1, s.seats),
     ).map((r, i) => ({
       name: r.name,
       value: r.value,

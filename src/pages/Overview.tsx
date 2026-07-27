@@ -22,6 +22,7 @@ import {
   bucketByDay,
   bucketProviderSpendByDay,
   countBy,
+  priceForTier,
   sumBy,
   withColors,
 } from "../lib/analytics";
@@ -81,10 +82,7 @@ export default function Overview() {
       sumBy(
         subs.filter((s) => s.status === "active" || s.status === "trialing"),
         (s) => s.tier,
-        (s) => {
-          const price = s.tier === "team" ? 25 : s.tier === "pro" ? 15 : 0;
-          return price * Math.max(1, s.seats);
-        },
+        (s) => priceForTier(s.tier) * Math.max(1, s.seats),
       ).map((r) => ({ name: r.name, count: r.value })),
       PLAN_COLORS,
     ).map((r) => ({ name: r.name, value: r.count, fill: r.fill }));
@@ -201,7 +199,11 @@ export default function Overview() {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
           <StatCard label="Orgs" value={String(data.totalOrgs)} sub={filtered ? `${charts.filteredOrgCount} in filter` : undefined} />
           <StatCard label="Users" value={String(data.totalUsers)} />
-          <StatCard label="MRR (est.)" value={fmtInr(data.mrrUsd)} sub={`Pro ${fmtInrSeat(15)}/seat · Team ${fmtInrSeat(25)}/seat`} />
+          <StatCard
+            label="MRR (est.)"
+            value={fmtInr(data.mrrUsd)}
+            sub={`Pro ${fmtInrSeat(priceForTier("pro"))}/seat · Team ${fmtInrSeat(priceForTier("team"))}/seat`}
+          />
           <StatCard label="Reviews this month" value={String(data.reviewsThisMonth)} />
           <StatCard label="LLM spend this month" value={fmtInr(data.llmSpendThisMonthUsd)} sub="Anthropic + OpenAI · approx INR" />
           <StatCard label="Anthropic this month" value={fmtInr(data.anthropicSpendThisMonthUsd)} sub="passes + repro-gen" />
