@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
 import type { AdminSubscriptionSummary } from "../lib/types";
 import { useClientPagination } from "../hooks/useClientPagination";
+import { priceForTier } from "../lib/analytics";
 import {
   ActionButton,
   Badge,
@@ -24,8 +25,6 @@ import {
   fmtInr,
   statusTone,
 } from "../components/ui";
-
-const TIER_PRICE: Record<string, number> = { pro: 15, team: 25 };
 
 type BillingDialog = { orgId: string; orgName: string; kind: "cancel" | "pro" | "team" } | null;
 
@@ -181,7 +180,7 @@ export default function Billing() {
             </thead>
             <tbody>
               {paging.pageItems.map((s) => {
-                const price = TIER_PRICE[s.tier];
+                const price = priceForTier(s.tier);
                 const isLive = s.status === "active" || s.status === "trialing";
                 const rowMrr = price && isLive ? price * Math.max(1, s.seats) : 0;
                 return (
