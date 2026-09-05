@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 type NavItem = {
   to: string;
@@ -294,7 +295,11 @@ export function Layout() {
         </header>
 
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-6">
-          <Outlet />
+          {/* Keyed by pathname so a crash on one page doesn't leave every later navigation
+              stuck on the fallback UI — the sidebar/header stay alive either way. */}
+          <ErrorBoundary key={location.pathname} scope="page">
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>
