@@ -20,8 +20,8 @@ describe("analytics helpers", () => {
   });
 
   it("priceForTier returns the documented per-seat price for pro/team, 0 for anything else", () => {
-    expect(priceForTier("pro")).toBe(15);
-    expect(priceForTier("team")).toBe(25);
+    expect(priceForTier("pro")).toBe(19);
+    expect(priceForTier("team")).toBe(35);
     expect(priceForTier("free")).toBe(0);
     expect(priceForTier("unknown")).toBe(0);
   });

@@ -179,9 +179,9 @@ export default function OrgDetail() {
       tone: "danger",
     },
     "change-pro": {
-      title: "Change plan to Pro",
-      body: `Switch ${data.name} to the Pro Razorpay plan immediately.`,
-      confirm: "Switch to Pro",
+      title: "Change plan to Individual",
+      body: `Switch ${data.name} to the Individual Razorpay plan immediately.`,
+      confirm: "Switch to Individual",
       tone: "primary",
     },
     "change-team": {
@@ -315,7 +315,7 @@ export default function OrgDetail() {
                       }}
                       disabled={data.plan === "pro"}
                     >
-                      → Pro
+                      → Individual
                     </ActionButton>
                     <ActionButton
                       onClick={() => {

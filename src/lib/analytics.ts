@@ -11,7 +11,7 @@
  * exactly the kind of drift risk that already caused a real, confirmed bug elsewhere this
  * session (the backend/frontend analytics acceptancePct formula silently diverging).
  */
-export const TIER_PRICE_USD: Record<string, number> = { pro: 15, team: 25 };
+export const TIER_PRICE_USD: Record<string, number> = { pro: 19, team: 35 };
 
 export function priceForTier(tier: string): number {
   return TIER_PRICE_USD[tier] ?? 0;

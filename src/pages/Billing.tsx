@@ -134,7 +134,7 @@ export default function Billing() {
               onChange={reset(setTierFilter)}
               options={[
                 { value: "all", label: "All" },
-                { value: "pro", label: "Pro" },
+                { value: "pro", label: "Individual" },
                 { value: "team", label: "Team" },
                 { value: "free", label: "Free" },
               ]}
@@ -218,7 +218,7 @@ export default function Billing() {
                               setDialog({ orgId: s.orgId, orgName: s.orgName, kind: "pro" });
                             }}
                           >
-                            → Pro
+                            → Individual
                           </ActionButton>
                           <ActionButton
                             disabled={s.tier === "team"}

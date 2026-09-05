@@ -81,7 +81,7 @@ export default function Orgs() {
               options={[
                 { value: "all", label: "All" },
                 { value: "free", label: "Free" },
-                { value: "pro", label: "Pro" },
+                { value: "pro", label: "Individual" },
                 { value: "team", label: "Team" },
               ]}
             />

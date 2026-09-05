@@ -171,7 +171,7 @@ export default function Overview() {
                 options={[
                   { value: "all", label: "All" },
                   { value: "free", label: "Free" },
-                  { value: "pro", label: "Pro" },
+                  { value: "pro", label: "Individual" },
                   { value: "team", label: "Team" },
                 ]}
               />
@@ -202,7 +202,7 @@ export default function Overview() {
           <StatCard
             label="MRR (est.)"
             value={fmtInr(data.mrrUsd)}
-            sub={`Pro ${fmtInrSeat(priceForTier("pro"))}/seat · Team ${fmtInrSeat(priceForTier("team"))}/seat`}
+            sub={`Individual ${fmtInrSeat(priceForTier("pro"))}/seat · Team ${fmtInrSeat(priceForTier("team"))}/seat`}
           />
           <StatCard label="Reviews this month" value={String(data.reviewsThisMonth)} />
           <StatCard label="LLM spend this month" value={fmtInr(data.llmSpendThisMonthUsd)} sub="Anthropic + OpenAI · approx INR" />
