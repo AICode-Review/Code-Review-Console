@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { actionCategory, bucketByDay, countBy, priceForTier, withColors } from "../lib/analytics";
+import { actionCategory, bucketByDay, countBy, priceForTier, tierLabel, withColors } from "../lib/analytics";
 
 describe("analytics helpers", () => {
   it("countBy aggregates and sorts descending", () => {
@@ -24,6 +24,13 @@ describe("analytics helpers", () => {
     expect(priceForTier("team")).toBe(35);
     expect(priceForTier("free")).toBe(0);
     expect(priceForTier("unknown")).toBe(0);
+  });
+
+  it("tierLabel maps DB tier values to the Pricing page's user-facing names", () => {
+    expect(tierLabel("pro")).toBe("Individual");
+    expect(tierLabel("team")).toBe("Team");
+    expect(tierLabel("free")).toBe("Free");
+    expect(tierLabel("unknown")).toBe("unknown");
   });
 
   it("bucketByDay fills empty days", () => {

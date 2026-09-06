@@ -63,6 +63,19 @@ export interface AdminOrgDetail extends AdminOrgSummary {
   recentRuns: AdminRunSummary[];
 }
 
+export interface AdminUserOrgMembership {
+  id: string;
+  name: string;
+  role: string;
+  plan: string;
+  reviewsUsed: number;
+  /** null means unlimited (self-hosted org). */
+  reviewsAllotted: number | null;
+  /** null means unlimited (self-hosted org). */
+  reviewsRemaining: number | null;
+  quotaBlocked: boolean;
+}
+
 export interface AdminUserSummary {
   id: string;
   email: string | null;
@@ -70,7 +83,7 @@ export interface AdminUserSummary {
   seatActive: boolean;
   isPlatformAdmin: boolean;
   createdAt: string;
-  orgs: { id: string; name: string; role: string }[];
+  orgs: AdminUserOrgMembership[];
 }
 
 export interface AdminSubscriptionSummary {

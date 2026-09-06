@@ -17,6 +17,13 @@ export function priceForTier(tier: string): number {
   return TIER_PRICE_USD[tier] ?? 0;
 }
 
+const TIER_LABELS: Record<string, string> = { pro: "Individual", team: "Team", free: "Free" };
+
+/** DB tier value ("pro") -> the user-facing name shown on the Pricing page ("Individual"). */
+export function tierLabel(tier: string): string {
+  return TIER_LABELS[tier] ?? tier;
+}
+
 export type NamedCount = { name: string; count: number; fill?: string };
 
 export const CHART_COLORS = [

@@ -24,6 +24,7 @@ import {
   Toolbar,
   fmtDate,
 } from "../components/ui";
+import { tierLabel } from "../lib/analytics";
 
 export default function Users() {
   const queryClient = useQueryClient();
@@ -37,6 +38,7 @@ export default function Users() {
   const [seatFilter, setSeatFilter] = useState("all");
   const [adminFilter, setAdminFilter] = useState("all");
   const [orgCountFilter, setOrgCountFilter] = useState("all");
+  const [planFilter, setPlanFilter] = useState("all");
   const [pending, setPending] = useState<AdminUserSummary | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -52,9 +54,10 @@ export default function Users() {
       const matchesOrgCount =
         orgCountFilter === "all" ||
         (orgCountFilter === "0" ? orgN === 0 : orgCountFilter === "1" ? orgN === 1 : orgN >= 2);
-      return matchesQuery && matchesSeat && matchesAdmin && matchesOrgCount;
+      const matchesPlan = planFilter === "all" || u.orgs.some((o) => o.plan === planFilter);
+      return matchesQuery && matchesSeat && matchesAdmin && matchesOrgCount && matchesPlan;
     });
-  }, [data?.users, query, seatFilter, adminFilter, orgCountFilter]);
+  }, [data?.users, query, seatFilter, adminFilter, orgCountFilter, planFilter]);
 
   const paging = useClientPagination(filtered);
 
@@ -132,6 +135,17 @@ export default function Users() {
                 { value: "2+", label: "2+ orgs" },
               ]}
             />
+            <SelectFilter
+              label="Plan"
+              value={planFilter}
+              onChange={reset(setPlanFilter)}
+              options={[
+                { value: "all", label: "All" },
+                { value: "free", label: "Free" },
+                { value: "pro", label: "Individual" },
+                { value: "team", label: "Team" },
+              ]}
+            />
           </Toolbar>
         }
         footer={
@@ -173,13 +187,24 @@ export default function Users() {
                       {u.orgs.length === 0 ? (
                         <span className="text-zinc-600">—</span>
                       ) : (
-                        <ul className="flex flex-col gap-0.5">
+                        <ul className="flex flex-col gap-1.5">
                           {u.orgs.map((o) => (
                             <li key={o.id}>
-                              <Link to={`/orgs/${o.id}`} className="text-zinc-300 hover:underline">
-                                {o.name}
-                              </Link>
-                              <span className="text-zinc-600"> ({o.role})</span>
+                              <div>
+                                <Link to={`/orgs/${o.id}`} className="text-zinc-300 hover:underline">
+                                  {o.name}
+                                </Link>
+                                <span className="text-zinc-600"> ({o.role})</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+                                <Badge tone={o.plan === "free" ? undefined : "good"}>{tierLabel(o.plan)}</Badge>
+                                <span className="tabular-nums">
+                                  {o.reviewsAllotted === null
+                                    ? `${o.reviewsUsed} reviews · unlimited`
+                                    : `${o.reviewsUsed}/${o.reviewsAllotted} reviews used`}
+                                </span>
+                                {o.quotaBlocked && <Badge tone="bad">quota reached</Badge>}
+                              </div>
                             </li>
                           ))}
                         </ul>
