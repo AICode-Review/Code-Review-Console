@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Overview from "./Overview";
 import type { PlatformOverview } from "../hooks/useOverview";
@@ -68,6 +68,21 @@ describe("Overview page", () => {
     expect(screen.getByText("₹18,675.00")).toBeInTheDocument();
     expect(screen.getByText("88")).toBeInTheDocument();
     expect(screen.getByText(/Orgs by plan/i)).toBeInTheDocument();
+  });
+
+  it("defaults the runs query to a 30-day window and re-fetches with a wider one when the Range picker changes", async () => {
+    renderOverview();
+    await screen.findByText("12");
+
+    const runsCalls = () => apiMock.mock.calls.map((c) => c[0] as string).filter((p) => p.startsWith("/api/admin/runs"));
+    expect(runsCalls()).toHaveLength(1);
+    expect(runsCalls()[0]).toMatch(/limit=200/);
+    expect(runsCalls()[0]).toMatch(/since=/);
+
+    fireEvent.change(screen.getByLabelText("Range"), { target: { value: "90" } });
+
+    await screen.findByText("Recent activity — last 90 days");
+    expect(runsCalls().length).toBeGreaterThan(1);
   });
 
   it("shows an error message when the overview request fails", async () => {

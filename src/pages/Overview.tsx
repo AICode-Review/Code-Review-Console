@@ -28,6 +28,13 @@ import {
 } from "../lib/analytics";
 import type { AdminOrgSummary, AdminRunSummary, AdminSubscriptionSummary } from "../lib/types";
 
+const RANGE_OPTIONS = [
+  { value: "7", label: "Last 7 days" },
+  { value: "14", label: "Last 14 days" },
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 90 days" },
+] as const;
+
 export default function Overview() {
   const overview = useOverview();
   const orgsQ = useQuery({
@@ -38,9 +45,15 @@ export default function Overview() {
     queryKey: ["admin", "billing"],
     queryFn: () => api<{ subscriptions: AdminSubscriptionSummary[] }>("/api/admin/billing"),
   });
+
+  const [rangeDays, setRangeDays] = useState("30");
+  const days = Number(rangeDays);
+  const sinceIso = useMemo(() => new Date(Date.now() - days * 86_400_000).toISOString(), [days]);
+
   const runsQ = useQuery({
-    queryKey: ["admin", "runs", "overview-sample"],
-    queryFn: () => api<{ runs: AdminRunSummary[] }>("/api/admin/runs?limit=100"),
+    queryKey: ["admin", "runs", "overview-sample", rangeDays],
+    queryFn: () =>
+      api<{ runs: AdminRunSummary[] }>(`/api/admin/runs?limit=200&since=${encodeURIComponent(sinceIso)}`),
   });
 
   const [platformFilter, setPlatformFilter] = useState("all");
@@ -88,15 +101,15 @@ export default function Overview() {
     ).map((r) => ({ name: r.name, value: r.count, fill: r.fill }));
 
     const runStatus = withColors(countBy(runs, (r) => r.status), STATUS_COLORS);
-    const spendByDay = bucketByDay(runs, (r) => r.startedAt, (r) => r.llmCostUsd, 14);
+    const spendByDay = bucketByDay(runs, (r) => r.startedAt, (r) => r.llmCostUsd, days);
     const providerSpendByDay = bucketProviderSpendByDay(
       runs,
       (r) => r.startedAt,
       (r) => r.anthropicCostUsd,
       (r) => r.openaiCostUsd,
-      14,
+      days,
     );
-    const reviewsByDay = bucketByDay(runs, (r) => r.startedAt, () => 1, 14);
+    const reviewsByDay = bucketByDay(runs, (r) => r.startedAt, () => 1, days);
     const funnel = [
       {
         name: "Funnel",
@@ -131,7 +144,7 @@ export default function Overview() {
       filteredSubCount: subs.length,
       sampleRunCount: runs.length,
     };
-  }, [orgs, subs, runs]);
+  }, [orgs, subs, runs, days]);
 
   const isLoading = overview.isLoading || orgsQ.isLoading;
   const error = overview.error ?? orgsQ.error;
@@ -154,6 +167,12 @@ export default function Overview() {
           subtitle={`Platform-wide tracking · billing period ${periodLabel}`}
           actions={
             <Toolbar>
+              <SelectFilter
+                label="Range"
+                value={rangeDays}
+                onChange={setRangeDays}
+                options={RANGE_OPTIONS as unknown as { value: string; label: string }[]}
+              />
               <SelectFilter
                 label="Platform"
                 value={platformFilter}
@@ -196,6 +215,12 @@ export default function Overview() {
           </p>
         )}
 
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-300">Billing period</h2>
+          <p className="text-xs text-zinc-500">
+            Fixed to the current cycle ({periodLabel}) — not affected by the Range picker above.
+          </p>
+        </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
           <StatCard label="Orgs" value={String(data.totalOrgs)} sub={filtered ? `${charts.filteredOrgCount} in filter` : undefined} />
           <StatCard label="Users" value={String(data.totalUsers)} />
@@ -244,41 +269,51 @@ export default function Overview() {
           </ChartCard>
         </div>
 
+        <div className="flex items-center gap-2 pt-2">
+          <h2 className="text-sm font-semibold text-zinc-300">
+            Recent activity — last {days} day{days === 1 ? "" : "s"}
+          </h2>
+          {runsQ.isFetching && <span className="text-xs text-zinc-500">Updating…</span>}
+        </div>
+        <p className="text-xs text-zinc-500">
+          Everything below reacts to the Range picker above (up to 200 most recent runs in that window).
+        </p>
+
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <StatCard label="Sample runs" value={String(charts.sampleRunCount)} sub="last ≤100 from API" />
-          <StatCard label="Sample LLM spend" value={fmtInr(charts.sampleSpend)} />
+          <StatCard label="Runs" value={String(charts.sampleRunCount)} sub={`last ${days}d, ≤200 from API`} />
+          <StatCard label="LLM spend" value={fmtInr(charts.sampleSpend)} />
           <StatCard
-            label="Sample by provider"
+            label="Spend by provider"
             value={fmtInr(charts.sampleAnthropic + charts.sampleOpenai)}
             sub={`A ${fmtInr(charts.sampleAnthropic)} · O ${fmtInr(charts.sampleOpenai)}`}
           />
-          <StatCard label="Sample fail rate" value={`${charts.sampleFailRate.toFixed(1)}%`} />
+          <StatCard label="Fail rate" value={`${charts.sampleFailRate.toFixed(1)}%`} />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <ChartCard
-            title="Provider spend (14d sample)"
+            title={`Provider spend (${days}d)`}
             subtitle="Anthropic vs OpenAI from recent runs · INR"
             empty={charts.providerSpendByDay.every((d) => d.anthropic === 0 && d.openai === 0)}
           >
             <DualProviderSpendChart data={charts.providerSpendByDay} formatValue={(n) => fmtInr(n)} />
           </ChartCard>
-          <ChartCard title="Reviews / day (14d sample)" empty={charts.reviewsByDay.every((d) => d.value === 0)}>
+          <ChartCard title={`Reviews / day (${days}d)`} empty={charts.reviewsByDay.every((d) => d.value === 0)}>
             <TimeSeriesChart data={charts.reviewsByDay} color="#60a5fa" />
           </ChartCard>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <ChartCard title="Total LLM spend (14d sample)" subtitle="Combined · INR" empty={charts.spendByDay.every((d) => d.value === 0)}>
+          <ChartCard title={`Total LLM spend (${days}d)`} subtitle="Combined · INR" empty={charts.spendByDay.every((d) => d.value === 0)}>
             <TimeSeriesChart data={charts.spendByDay} formatValue={(n) => fmtInr(n)} color="#34d399" />
           </ChartCard>
-          <ChartCard title="Run status (sample)" empty={charts.runStatus.length === 0}>
+          <ChartCard title="Run status" empty={charts.runStatus.length === 0}>
             <DonutChart data={charts.runStatus} />
           </ChartCard>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-1">
-          <ChartCard title="Finding totals (sample)" empty={charts.sampleRunCount === 0}>
+          <ChartCard title={`Finding totals (${days}d)`} empty={charts.sampleRunCount === 0}>
             <VerticalBarChart
               data={[
                 { name: "Candidates", value: charts.funnel[0]?.candidates ?? 0, fill: "#71717a" },
