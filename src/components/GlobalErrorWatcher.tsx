@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { captureError } from "../observability/sentry";
 
 interface Toast {
   id: number;
@@ -33,10 +34,12 @@ export function GlobalErrorWatcher() {
 
     function onError(event: ErrorEvent) {
       console.error("[GlobalErrorWatcher] uncaught error:", event.error ?? event.message);
+      captureError(event.error ?? new Error(String(event.message)), { kind: "window.error" });
       push("Something went wrong. Some part of the console may not have updated.");
     }
     function onRejection(event: PromiseRejectionEvent) {
       console.error("[GlobalErrorWatcher] unhandled promise rejection:", event.reason);
+      captureError(event.reason, { kind: "unhandledrejection" });
       push("A background request failed unexpectedly. Some part of the console may not have updated.");
     }
 

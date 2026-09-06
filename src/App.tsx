@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
+import { useIdleTimeout } from "./hooks/useIdleTimeout";
 import { useOverview } from "./hooks/useOverview";
 import { ThemeProvider } from "./hooks/useTheme";
 import { isForbiddenError } from "./lib/api";
@@ -29,10 +30,16 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
 
+/** A signed-in admin session can suspend orgs, change billing, and grant/revoke other
+ * admins — 30 minutes of no keyboard/mouse/scroll activity signs out automatically rather
+ * than leaving that access live indefinitely on a shared/unattended machine. */
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+
 /** Signs in via the same Supabase session as the app, then gates on GET /api/admin/overview — a 403 there (not a route guard) is the real enforcement. */
 function ProtectedShell() {
-  const { authenticated, loading: authLoading } = useAuth();
+  const { authenticated, loading: authLoading, signOut } = useAuth();
   const overview = useOverview(!authLoading && authenticated);
+  useIdleTimeout(signOut, IDLE_TIMEOUT_MS, authenticated);
 
   if (authLoading) return <RouteFallback />;
   if (!authenticated) return <Navigate to="/signin" replace />;

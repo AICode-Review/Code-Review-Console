@@ -3,7 +3,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { GlobalErrorWatcher } from "./components/GlobalErrorWatcher";
+import { initSentry } from "./observability/sentry";
 import "./index.css";
+
+initSentry();
 
 const root = document.getElementById("root");
 if (!root) throw new Error("#root not found");

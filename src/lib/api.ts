@@ -1,8 +1,17 @@
 import { supabase } from "./supabase";
 
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:4000";
+/** Undefined (not a silent localhost fallback) when VITE_API_URL is missing at build time —
+ * a misconfigured Vercel env var used to bake in `http://localhost:4000` and fail every
+ * request with an opaque network error, with nothing pointing at the actual cause. api()
+ * now throws a clear, specific error immediately instead. */
+const API_URL = import.meta.env.VITE_API_URL as string | undefined;
+
+export function apiConfigured(): boolean {
+  return Boolean(API_URL);
+}
 
 export function apiUrl(path: string): string {
+  if (!API_URL) throw new Error("VITE_API_URL is not configured for this deployment");
   return `${API_URL.replace(/\/+$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
