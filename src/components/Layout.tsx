@@ -49,6 +49,20 @@ function IconUsers({ className = "size-4" }: { className?: string }) {
   );
 }
 
+function IconAdmins({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M10 3.5 16 6v4.2c0 3.4-2.4 5.8-6 6.8-3.6-1-6-3.4-6-6.8V6l6-2.5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="M8 10.2 9.4 11.6 12.2 8.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconBilling({ className = "size-4" }: { className?: string }) {
   return (
     <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
@@ -133,6 +147,7 @@ const NAV: NavItem[] = [
   { to: "/", label: "Overview", end: true, icon: IconOverview },
   { to: "/orgs", label: "Organizations", icon: IconOrgs },
   { to: "/users", label: "Users", icon: IconUsers },
+  { to: "/admins", label: "Admins", icon: IconAdmins },
   {
     to: "/billing",
     label: "Billing",
@@ -169,6 +184,7 @@ function useHeaderMeta(): { title: string; crumb?: string } {
   if (path === "/orgs") return { title: "Organizations", crumb: "Platform" };
   if (path.startsWith("/orgs/") && id) return { title: "Organization detail", crumb: "Organizations" };
   if (path === "/users") return { title: "Users", crumb: "Platform" };
+  if (path === "/admins") return { title: "Admins", crumb: "Platform" };
   if (path === "/billing") return { title: "Billing", crumb: "Platform" };
   if (path === "/billing/analytics") return { title: "Billing analytics", crumb: "Platform" };
   if (path === "/runs") return { title: "Review runs", crumb: "Activity" };
@@ -199,11 +215,11 @@ export function Layout() {
           }`}
         >
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-50 text-xs font-semibold text-zinc-900">
-            CF
+            S
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-zinc-50">CodeFerret</p>
+              <p className="truncate text-sm font-semibold text-zinc-50">Scrutinye</p>
               <p className="truncate text-[11px] text-zinc-500">Admin console</p>
             </div>
           )}

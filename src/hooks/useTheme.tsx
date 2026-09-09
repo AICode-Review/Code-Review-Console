@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-const THEME_KEY = "codeferret.console.theme";
-const SIDEBAR_KEY = "codeferret.console.sidebarCollapsed";
+const THEME_KEY = "scrutinye.console.theme";
+const SIDEBAR_KEY = "scrutinye.console.sidebarCollapsed";
 
 export type Theme = "light" | "dark";
 

@@ -24,8 +24,21 @@ function renderLayout(path = "/") {
 
 describe("Layout", () => {
   beforeEach(() => {
-    localStorage.removeItem("codeferret.console.theme");
-    localStorage.removeItem("codeferret.console.sidebarCollapsed");
+    localStorage.removeItem("scrutinye.console.theme");
+    localStorage.removeItem("scrutinye.console.sidebarCollapsed");
+  });
+
+  it("renders Users and Admins as separate nav items", () => {
+    renderLayout("/");
+    expect(screen.getByRole("link", { name: /^Users$/i })).toHaveAttribute("href", "/users");
+    expect(screen.getByRole("link", { name: /^Admins$/i })).toHaveAttribute("href", "/admins");
+  });
+
+  it("titles the header Admins on /admins", () => {
+    renderLayout("/admins");
+    expect(screen.getByRole("heading", { name: "Admins" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^Admins$/i }).className).toContain("bg-zinc-800");
+    expect(screen.getByRole("link", { name: /^Users$/i }).className).not.toContain("bg-zinc-800");
   });
 
   it("renders a top header with page title and hamburger", () => {
@@ -40,15 +53,15 @@ describe("Layout", () => {
     const user = userEvent.setup();
     renderLayout();
 
-    expect(screen.getByText("CodeFerret")).toBeInTheDocument();
+    expect(screen.getByText("Scrutinye")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Overview/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Collapse sidebar" }));
     expect(screen.queryByText("Admin console")).not.toBeInTheDocument();
-    expect(localStorage.getItem("codeferret.console.sidebarCollapsed")).toBe("1");
+    expect(localStorage.getItem("scrutinye.console.sidebarCollapsed")).toBe("1");
 
     await user.click(screen.getByRole("button", { name: "Expand sidebar" }));
-    expect(screen.getByText("CodeFerret")).toBeInTheDocument();
+    expect(screen.getByText("Scrutinye")).toBeInTheDocument();
     expect(screen.getByText("Admin console")).toBeInTheDocument();
   });
 
@@ -61,7 +74,7 @@ describe("Layout", () => {
 
     await user.click(screen.getByRole("button", { name: "Switch to light theme" }));
     expect(shell).toHaveAttribute("data-theme", "light");
-    expect(localStorage.getItem("codeferret.console.theme")).toBe("light");
+    expect(localStorage.getItem("scrutinye.console.theme")).toBe("light");
 
     await user.click(screen.getByRole("button", { name: "Switch to dark theme" }));
     expect(shell).toHaveAttribute("data-theme", "dark");

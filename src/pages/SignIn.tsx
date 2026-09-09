@@ -46,7 +46,7 @@ export default function SignIn() {
       </button>
 
       <div className="w-full max-w-sm">
-        <p className="text-lg font-semibold tracking-tight text-zinc-50">CodeFerret Admin</p>
+        <p className="text-lg font-semibold tracking-tight text-zinc-50">Scrutinye Admin</p>
         <p className="mt-1.5 text-sm text-zinc-400">Sign in with your platform admin account.</p>
 
         {!configured ? (
