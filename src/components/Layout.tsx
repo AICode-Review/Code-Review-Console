@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { LogoMark } from "./LogoMark";
 
 type NavItem = {
   to: string;
@@ -214,8 +215,8 @@ export function Layout() {
             sidebarCollapsed ? "justify-center px-2" : "gap-2.5 px-4"
           }`}
         >
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-50 text-xs font-semibold text-zinc-900">
-            S
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-50 text-zinc-900">
+            <LogoMark className="size-4" />
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0">
