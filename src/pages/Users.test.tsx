@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Users from "./Users";
@@ -78,13 +78,22 @@ describe("Users page", () => {
   it("shows each user's plan and review-quota usage per org", async () => {
     renderUsers();
 
-    // "Individual"/"Free" also appear as Plan-filter option labels, so assert
-    // via the unique usage text instead of disambiguating every badge match.
-    expect(await screen.findByText("32/250 reviews used")).toBeInTheDocument();
-    expect(screen.getByText("25/25 reviews used")).toBeInTheDocument();
+    expect(await screen.findByRole("columnheader", { name: "Used reviews" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Allotted reviews" })).toBeInTheDocument();
+
+    const ownerRow = screen.getByText("owner@acme.dev").closest("tr")!;
+    expect(within(ownerRow).getByText("32")).toBeInTheDocument();
+    expect(within(ownerRow).getByText("250")).toBeInTheDocument();
+
+    const freeRow = screen.getByText("solo@free.dev").closest("tr")!;
+    expect(within(freeRow).getAllByText("25")).toHaveLength(2);
+
+    expect(screen.queryByText("32/250 reviews used")).not.toBeInTheDocument();
+    expect(screen.queryByText("25/25 reviews used")).not.toBeInTheDocument();
     expect(screen.getAllByText("Individual").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Free").length).toBeGreaterThan(0);
     expect(screen.getByText("quota reached")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Grant admin|Revoke admin/ })).not.toBeInTheDocument();
   });
 
   it("filters the list down to users on a specific plan", async () => {

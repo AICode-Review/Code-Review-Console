@@ -56,6 +56,7 @@ describe("Overview page", () => {
         return { subscriptions: [{ orgId: "o1", orgName: "Acme", tier: "pro", status: "active", seats: 3, razorpayCustomerId: null, razorpaySubId: "sub_1" }] };
       }
       if (path.startsWith("/api/admin/runs")) return { runs: [] };
+      if (path.startsWith("/api/admin/visitors")) return { siteVisitors: 42, loggedInMembers: 9 };
       throw new Error(`unexpected path ${path}`);
     });
   });
@@ -91,9 +92,34 @@ describe("Overview page", () => {
       if (path === "/api/admin/orgs") return { orgs: [] };
       if (path === "/api/admin/billing") return { subscriptions: [] };
       if (path.startsWith("/api/admin/runs")) return { runs: [] };
+      if (path.startsWith("/api/admin/visitors")) return { siteVisitors: 0, loggedInMembers: 0 };
       throw new Error(`unexpected path ${path}`);
     });
     renderOverview();
     expect(await screen.findByText(/Failed to load overview: network down/)).toBeInTheDocument();
+  });
+
+  it("shows visitor stats defaulting to Today, and re-fetches with a wider window when changed", async () => {
+    renderOverview();
+    await screen.findByText("12");
+
+    expect(await screen.findByText("42")).toBeInTheDocument(); // siteVisitors
+    expect(screen.getByText("9")).toBeInTheDocument(); // loggedInMembers
+
+    const visitorCalls = () => apiMock.mock.calls.map((c) => c[0] as string).filter((p) => p.startsWith("/api/admin/visitors"));
+    expect(visitorCalls()).toHaveLength(1);
+
+    apiMock.mockImplementation(async (path: string) => {
+      if (path.startsWith("/api/admin/visitors")) return { siteVisitors: 500, loggedInMembers: 120 };
+      if (path === "/api/admin/overview") return SAMPLE;
+      if (path === "/api/admin/orgs") return { orgs: [] };
+      if (path === "/api/admin/billing") return { subscriptions: [] };
+      if (path.startsWith("/api/admin/runs")) return { runs: [] };
+      throw new Error(`unexpected path ${path}`);
+    });
+    fireEvent.change(screen.getByLabelText("Visitor range"), { target: { value: "30d" } });
+
+    expect(await screen.findByText("500")).toBeInTheDocument();
+    expect(screen.getByText("120")).toBeInTheDocument();
   });
 });

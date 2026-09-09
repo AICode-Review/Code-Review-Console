@@ -13,6 +13,7 @@ import {
   fmtInrSeat,
 } from "../components/ui";
 import { useOverview } from "../hooks/useOverview";
+import { useVisitorStats, type VisitorRange } from "../hooks/useVisitorStats";
 import { api } from "../lib/api";
 import {
   PLATFORM_COLORS,
@@ -35,8 +36,16 @@ const RANGE_OPTIONS = [
   { value: "90", label: "Last 90 days" },
 ] as const;
 
+const VISITOR_RANGE_OPTIONS: { value: VisitorRange; label: string }[] = [
+  { value: "today", label: "Today" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+];
+
 export default function Overview() {
   const overview = useOverview();
+  const [visitorRange, setVisitorRange] = useState<VisitorRange>("today");
+  const visitorStats = useVisitorStats(visitorRange);
   const orgsQ = useQuery({
     queryKey: ["admin", "orgs"],
     queryFn: () => api<{ orgs: AdminOrgSummary[] }>("/api/admin/orgs"),
@@ -235,6 +244,37 @@ export default function Overview() {
           <StatCard label="OpenAI this month" value={fmtInr(data.openaiSpendThisMonthUsd)} sub="skeptic cross-exam" />
           <StatCard label="Avg cost / review" value={fmtInr(avgCost)} sub={data.reviewsThisMonth === 0 ? "no reviews yet" : undefined} />
         </div>
+
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-300">Visitors</h2>
+            <p className="text-xs text-zinc-500">Anonymous marketing-site traffic vs. real authenticated sign-ins.</p>
+          </div>
+          <SelectFilter
+            label="Visitor range"
+            value={visitorRange}
+            onChange={(v) => setVisitorRange(v as VisitorRange)}
+            options={VISITOR_RANGE_OPTIONS}
+          />
+        </div>
+        {visitorStats.isLoading ? (
+          <LoadingText>Loading visitor stats…</LoadingText>
+        ) : visitorStats.isError ? (
+          <ErrorText>Failed to load visitor stats: {(visitorStats.error as Error).message}</ErrorText>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-2">
+            <StatCard
+              label="Site visitors"
+              value={String(visitorStats.data?.siteVisitors ?? 0)}
+              sub="Anonymous, marketing site only"
+            />
+            <StatCard
+              label="Logged-in members"
+              value={String(visitorStats.data?.loggedInMembers ?? 0)}
+              sub="Distinct users who signed in"
+            />
+          </div>
+        )}
 
         <div className="grid gap-4 lg:grid-cols-3">
           <ChartCard title="LLM spend by provider" subtitle="This billing period" empty={data.llmSpendThisMonthUsd === 0}>

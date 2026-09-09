@@ -1,14 +1,11 @@
-import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { api, ApiError } from "../lib/api";
-import type { AdminUserSummary } from "../lib/types";
-import { useAdminMe } from "../hooks/useAdminMe";
+import { api } from "../lib/api";
+import type { AdminUserOrgMembership, AdminUserSummary } from "../lib/types";
 import { useClientPagination } from "../hooks/useClientPagination";
 import {
-  ActionButton,
   Badge,
-  ConfirmDialog,
   DataPanel,
   EmptyState,
   ErrorText,
@@ -26,9 +23,28 @@ import {
 } from "../components/ui";
 import { tierLabel } from "../lib/analytics";
 
+function OrgLines({
+  orgs,
+  render,
+  empty = "—",
+}: {
+  orgs: AdminUserOrgMembership[];
+  render: (org: AdminUserOrgMembership) => ReactNode;
+  empty?: string;
+}) {
+  if (orgs.length === 0) return <span className="text-zinc-600">{empty}</span>;
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {orgs.map((o) => (
+        <li key={o.id} className="flex min-h-6 items-center">
+          {render(o)}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function Users() {
-  const queryClient = useQueryClient();
-  const me = useAdminMe();
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "users"],
     queryFn: () => api<{ users: AdminUserSummary[] }>("/api/admin/users"),
@@ -36,11 +52,8 @@ export default function Users() {
 
   const [query, setQuery] = useState("");
   const [seatFilter, setSeatFilter] = useState("all");
-  const [adminFilter, setAdminFilter] = useState("all");
   const [orgCountFilter, setOrgCountFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
-  const [pending, setPending] = useState<AdminUserSummary | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -48,34 +61,16 @@ export default function Users() {
       const hay = `${u.email ?? ""} ${u.handle ?? ""} ${u.id}`.toLowerCase();
       const matchesQuery = !needle || hay.includes(needle) || u.orgs.some((o) => o.name.toLowerCase().includes(needle));
       const matchesSeat = seatFilter === "all" || (seatFilter === "active" ? u.seatActive : !u.seatActive);
-      const matchesAdmin =
-        adminFilter === "all" || (adminFilter === "admin" ? u.isPlatformAdmin : !u.isPlatformAdmin);
       const orgN = u.orgs.length;
       const matchesOrgCount =
         orgCountFilter === "all" ||
         (orgCountFilter === "0" ? orgN === 0 : orgCountFilter === "1" ? orgN === 1 : orgN >= 2);
       const matchesPlan = planFilter === "all" || u.orgs.some((o) => o.plan === planFilter);
-      return matchesQuery && matchesSeat && matchesAdmin && matchesOrgCount && matchesPlan;
+      return matchesQuery && matchesSeat && matchesOrgCount && matchesPlan;
     });
-  }, [data?.users, query, seatFilter, adminFilter, orgCountFilter, planFilter]);
+  }, [data?.users, query, seatFilter, orgCountFilter, planFilter]);
 
   const paging = useClientPagination(filtered);
-
-  const toggleAdmin = useMutation({
-    mutationFn: (args: { id: string; isPlatformAdmin: boolean }) =>
-      api<{ id: string; isPlatformAdmin: boolean }>(`/api/admin/users/${args.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ isPlatformAdmin: args.isPlatformAdmin }),
-      }),
-    onSuccess: async () => {
-      setPending(null);
-      setActionError(null);
-      await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-    },
-    onError: (err) => {
-      setActionError(err instanceof ApiError ? err.message : (err as Error).message);
-    },
-  });
 
   const onQuery = (v: string) => {
     setQuery(v);
@@ -89,15 +84,13 @@ export default function Users() {
   if (isLoading) return <LoadingText>Loading users…</LoadingText>;
   if (error) return <ErrorText>Failed to load users: {(error as Error).message}</ErrorText>;
 
-  const adminCount = (data?.users ?? []).filter((u) => u.isPlatformAdmin).length;
   const activeSeats = filtered.filter((u) => u.seatActive).length;
-  const granting = pending ? !pending.isPlatformAdmin : false;
 
   return (
     <PageShell>
       <PageHeader
         title="Users"
-        subtitle={`${filtered.length} of ${data?.users.length ?? 0} users · ${activeSeats} active seats · ${adminCount} platform admin${adminCount === 1 ? "" : "s"}`}
+        subtitle={`${filtered.length} of ${data?.users.length ?? 0} users · ${activeSeats} active seats`}
       />
 
       <DataPanel
@@ -112,16 +105,6 @@ export default function Users() {
                 { value: "all", label: "All" },
                 { value: "active", label: "Active" },
                 { value: "inactive", label: "Inactive" },
-              ]}
-            />
-            <SelectFilter
-              label="Admin"
-              value={adminFilter}
-              onChange={reset(setAdminFilter)}
-              options={[
-                { value: "all", label: "All" },
-                { value: "admin", label: "Platform admin" },
-                { value: "user", label: "Not admin" },
               ]}
             />
             <SelectFilter
@@ -167,94 +150,62 @@ export default function Users() {
               <tr>
                 <Th>Email / handle</Th>
                 <Th>Orgs</Th>
+                <Th>Used reviews</Th>
+                <Th>Allotted reviews</Th>
                 <Th>Seat</Th>
-                <Th>Admin</Th>
                 <Th>Joined</Th>
-                <Th align="right">Actions</Th>
               </tr>
             </thead>
             <tbody>
-              {paging.pageItems.map((u) => {
-                const isSelf = me.data?.id === u.id;
-                const soleSelfRevoke = isSelf && u.isPlatformAdmin && adminCount <= 1;
-                return (
-                  <tr key={u.id} className="hover:bg-zinc-900/50">
-                    <Td>
-                      <div className="font-medium text-zinc-100">{u.email ?? u.handle ?? u.id}</div>
-                      {u.email && u.handle && <div className="text-xs text-zinc-500">@{u.handle}</div>}
-                    </Td>
-                    <Td>
-                      {u.orgs.length === 0 ? (
-                        <span className="text-zinc-600">—</span>
-                      ) : (
-                        <ul className="flex flex-col gap-1.5">
-                          {u.orgs.map((o) => (
-                            <li key={o.id}>
-                              <div>
-                                <Link to={`/orgs/${o.id}`} className="text-zinc-300 hover:underline">
-                                  {o.name}
-                                </Link>
-                                <span className="text-zinc-600"> ({o.role})</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-                                <Badge tone={o.plan === "free" ? undefined : "good"}>{tierLabel(o.plan)}</Badge>
-                                <span className="tabular-nums">
-                                  {o.reviewsAllotted === null
-                                    ? `${o.reviewsUsed} reviews · unlimited`
-                                    : `${o.reviewsUsed}/${o.reviewsAllotted} reviews used`}
-                                </span>
-                                {o.quotaBlocked && <Badge tone="bad">quota reached</Badge>}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
+              {paging.pageItems.map((u) => (
+                <tr key={u.id} className="hover:bg-zinc-900/50">
+                  <Td>
+                    <div className="font-medium text-zinc-100">{u.email ?? u.handle ?? u.id}</div>
+                    {u.email && u.handle && <div className="text-xs text-zinc-500">@{u.handle}</div>}
+                  </Td>
+                  <Td>
+                    <OrgLines
+                      orgs={u.orgs}
+                      render={(o) => (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Link to={`/orgs/${o.id}`} className="text-zinc-300 hover:underline">
+                            {o.name}
+                          </Link>
+                          <span className="text-zinc-600">({o.role})</span>
+                          <Badge tone={o.plan === "free" ? undefined : "good"}>{tierLabel(o.plan)}</Badge>
+                        </div>
                       )}
-                    </Td>
-                    <Td>{u.seatActive ? <Badge tone="good">active</Badge> : <Badge>inactive</Badge>}</Td>
-                    <Td>{u.isPlatformAdmin ? <Badge tone="good">admin</Badge> : <span className="text-zinc-600">—</span>}</Td>
-                    <Td>{fmtDate(u.createdAt)}</Td>
-                    <Td align="right">
-                      <ActionButton
-                        tone={u.isPlatformAdmin ? "danger" : "primary"}
-                        disabled={soleSelfRevoke}
-                        title={soleSelfRevoke ? "Cannot revoke the last platform admin" : undefined}
-                        onClick={() => {
-                          setActionError(null);
-                          setPending(u);
-                        }}
-                      >
-                        {u.isPlatformAdmin ? "Revoke admin" : "Grant admin"}
-                      </ActionButton>
-                    </Td>
-                  </tr>
-                );
-              })}
+                    />
+                  </Td>
+                  <Td>
+                    <OrgLines
+                      orgs={u.orgs}
+                      render={(o) => (
+                        <div className="flex items-center gap-1.5 tabular-nums text-zinc-200">
+                          <span>{o.reviewsUsed}</span>
+                          {o.quotaBlocked && <Badge tone="bad">quota reached</Badge>}
+                        </div>
+                      )}
+                    />
+                  </Td>
+                  <Td>
+                    <OrgLines
+                      orgs={u.orgs}
+                      render={(o) => (
+                        <span className="tabular-nums text-zinc-200">
+                          {o.reviewsAllotted === null ? "Unlimited" : o.reviewsAllotted}
+                        </span>
+                      )}
+                    />
+                  </Td>
+                  <Td>{u.seatActive ? <Badge tone="good">active</Badge> : <Badge>inactive</Badge>}</Td>
+                  <Td>{fmtDate(u.createdAt)}</Td>
+                </tr>
+              ))}
             </tbody>
           </Table>
         )}
       </DataPanel>
-
-      <ConfirmDialog
-        open={!!pending}
-        title={granting ? "Grant platform admin" : "Revoke platform admin"}
-        body={
-          granting
-            ? `Grant console access to ${pending?.email ?? pending?.id}? They will see every org on the platform.`
-            : `Revoke console access from ${pending?.email ?? pending?.id}?`
-        }
-        confirmLabel={granting ? "Grant admin" : "Revoke admin"}
-        tone={granting ? "primary" : "danger"}
-        busy={toggleAdmin.isPending}
-        error={actionError}
-        onCancel={() => {
-          setPending(null);
-          setActionError(null);
-        }}
-        onConfirm={() => {
-          if (!pending) return;
-          toggleAdmin.mutate({ id: pending.id, isPlatformAdmin: !pending.isPlatformAdmin });
-        }}
-      />
     </PageShell>
   );
 }
