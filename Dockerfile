@@ -1,7 +1,7 @@
 # Platform admin console — static build served by nginx, same shape as frontend/Dockerfile.
 # Deliberately a separate image (own domain, never shipped to customers) — see CLAUDE.md.
 # Vite env vars (VITE_*) are baked in at build time; pass them as build args.
-FROM node:20-slim AS build
+FROM node:24-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
